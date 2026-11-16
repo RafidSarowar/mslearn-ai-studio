@@ -1,0 +1,9 @@
+# Local configuration: holds your own endpoint and deployment name.
+# Copy .env.example to .env and fill it in; .env itself is never committed.
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
