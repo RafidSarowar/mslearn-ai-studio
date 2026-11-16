@@ -1,23 +1,34 @@
 import os
 from dotenv import load_dotenv
 
-# import namespaces
+# import namespaces for async
+import asyncio
+from openai import AsyncOpenAI
+from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
 
-
-
-def main(): 
+def main():
     # Clear the console
     os.system('cls' if os.name == 'nt' else 'clear')
 
     try:
-        # Get configuration settings 
+        # Get configuration settings
         load_dotenv()
         azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         model_deployment = os.getenv("MODEL_DEPLOYMENT")
 
-        # Initialize the OpenAI client
-        
+        # Initialize an async OpenAI client
+        credential = DefaultAzureCredential()
+        token_provider = get_bearer_token_provider(
+        credential, "https://ai.azure.com/.default"
+        )
 
+        async_client = AsyncOpenAI(
+            base_url=azure_openai_endpoint,
+            api_key=token_provider
+        )
+
+        # Track responses
+        last_response_id = None
 
         # Loop until the user wants to quit
         while True:
@@ -29,10 +40,22 @@ def main():
                 continue
 
             # Get a response
-            
+            stream = openai_client.responses.create(
+                        model=model_deployment,
+                        instructions="You are a helpful AI assistant that answers questions and provides information.",
+                        input=input_text,
+                        previous_response_id=last_response_id,
+                        stream=True
+            )
+            for event in stream:
+                if event.type == "response.output_text.delta":
+                    print(event.delta, end="")
+                elif event.type == "response.completed":
+                    last_response_id = event.response.id
+            print()
 
     except Exception as ex:
         print(ex)
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     main()
